@@ -15,7 +15,7 @@ const handleChange = (e) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/todo`, {
+    const response = await fetch(`https://todobeckend.onrender.com/todo`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

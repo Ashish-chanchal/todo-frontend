@@ -12,7 +12,7 @@ function App() {
  
   
   async function  getTodos  (){
-    const res = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/todos`,{
+    const res = await fetch(`https://todobeckend.onrender.com/todos`,{
       method:'GET',
       headers:{
         'Content-Type':'application/json'
@@ -26,7 +26,7 @@ function App() {
     getTodos();
   }, [])
  async function makeComplete(id){
-   const res = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/completed`,{
+   const res = await fetch(`https://todobeckend.onrender.com/completed`,{
      method:'PUT',
      headers:{
        'Content-Type':'application/json'
@@ -38,7 +38,7 @@ function App() {
     getTodos();
  }
 async function deleteTodo(id){
-  const res = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/delete`,{
+  const res = await fetch(`https://todobeckend.onrender.com/delete`,{
     method:'DELETE',
     headers:{
       'Content-Type':'application/json'
