@@ -3,13 +3,13 @@ import { useEffect } from "react"
 import Form from "./components/Form"
 import NavBar from "./components/NavBar"
 import TodosLIst from "./components/TodosLIst"
-
+const apiUrl = import.meta.env.VITE_API_BACKEND_URI
 
 
 function App() {
   const [todos, setTodos] = React.useState([]);
 
-  const apiUrl = import.meta.env.VITE_API_BACKEND_URI
+ 
   
   async function  getTodos  (){
     const res = await fetch(`${apiUrl}/todos`,{
