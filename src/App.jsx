@@ -3,7 +3,7 @@ import { useEffect } from "react"
 import Form from "./components/Form"
 import NavBar from "./components/NavBar"
 import TodosLIst from "./components/TodosLIst"
-const apiUrl = import.meta.env.VITE_API_BACKEND_URI
+
 
 
 function App() {
@@ -12,7 +12,7 @@ function App() {
  
   
   async function  getTodos  (){
-    const res = await fetch(`${apiUrl}/todos`,{
+    const res = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/todos`,{
       method:'GET',
       headers:{
         'Content-Type':'application/json'
@@ -26,7 +26,7 @@ function App() {
     getTodos();
   }, [])
  async function makeComplete(id){
-   const res = await fetch(`${apiUrl}/completed`,{
+   const res = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/completed`,{
      method:'PUT',
      headers:{
        'Content-Type':'application/json'
@@ -38,7 +38,7 @@ function App() {
     getTodos();
  }
 async function deleteTodo(id){
-  const res = await fetch(`${apiUrl}/delete`,{
+  const res = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/delete`,{
     method:'DELETE',
     headers:{
       'Content-Type':'application/json'

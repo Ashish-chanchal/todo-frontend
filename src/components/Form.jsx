@@ -1,6 +1,6 @@
 import { CheckCircle } from 'lucide-react'
 import React from 'react'
-const apiUrl = import.meta.env.VITE_API_BACKEND_URI
+
 function Form({getTodos}) {
 const [formData, setFormData] = React.useState({title: '', description: ''})
 const [message, setMessage] = React.useState('')
@@ -15,7 +15,7 @@ const handleChange = (e) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const response = await fetch(`${apiUrl}/todo`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/todo`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
