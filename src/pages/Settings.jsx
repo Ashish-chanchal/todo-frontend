@@ -115,12 +115,44 @@ function Settings({ onBack }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Mock Stripe checkout trigger
+  // Helper to dynamically load the Razorpay checkout script
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  // Razorpay checkout flow
   const handleUpgrade = async (targetTier) => {
     setBillingLoading(true);
     setBillingMessage('');
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/billing/checkout`, {
+      // 1. Load Razorpay script
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        setBillingMessage('❌ Failed to load Razorpay SDK. Check your network.');
+        setBillingLoading(false);
+        return;
+      }
+
+      // 2. Fetch Razorpay Public Key ID
+      const keyRes = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/billing/razorpay/key`);
+      if (!keyRes.ok) {
+        const keyData = await keyRes.json();
+        throw new Error(keyData.msg || 'Failed to fetch Razorpay public key');
+      }
+      const { keyId } = await keyRes.json();
+
+      // 3. Create Razorpay order
+      const orderRes = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/billing/razorpay/order`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -128,17 +160,72 @@ function Settings({ onBack }) {
         },
         body: JSON.stringify({ tier: targetTier })
       });
-      const data = await response.json();
-      if (response.ok) {
-        setSubTier(data.subscription.tier);
-        setSubStatus(data.subscription.status);
-        setBillingMessage(`✨ ${data.msg}`);
-      } else {
-        setBillingMessage(`❌ Upgrading failed: ${data.msg}`);
+      
+      if (!orderRes.ok) {
+        const orderData = await orderRes.json();
+        throw new Error(orderData.msg || 'Failed to create payment order');
       }
+      const orderData = await orderRes.json();
+
+      // 4. Open Razorpay checkout widget
+      const options = {
+        key: keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'TodoAI Workspace',
+        description: `Upgrade workspace to ${targetTier.toUpperCase()} subscription`,
+        order_id: orderData.orderId,
+        handler: async (response) => {
+          try {
+            setBillingLoading(true);
+            setBillingMessage('⏳ Verifying payment signature...');
+            const verifyRes = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/billing/razorpay/verify`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                tier: targetTier
+              })
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok) {
+              setSubTier(verifyData.subscription.tier);
+              setSubStatus(verifyData.subscription.status);
+              setBillingMessage(`✨ ${verifyData.msg}`);
+            } else {
+              setBillingMessage(`❌ Upgrading failed: ${verifyData.msg}`);
+            }
+          } catch (verifyErr) {
+            setBillingMessage('❌ Payment verification connection failed.');
+          } finally {
+            setBillingLoading(false);
+          }
+        },
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || ''
+        },
+        theme: {
+          color: '#5c68ff'
+        },
+        modal: {
+          ondismiss: () => {
+            setBillingLoading(false);
+            setBillingMessage('⚠️ Checkout cancelled by user.');
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (err) {
-      setBillingMessage('❌ Checkout failed.');
-    } finally {
+      console.error(err);
+      setBillingMessage(`❌ Checkout initialization failed: ${err.message}`);
       setBillingLoading(false);
     }
   };
