@@ -1,0 +1,336 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Key, Copy, Check, Trash2, ArrowLeft, Plus, CreditCard, ShieldAlert } from 'lucide-react';
+
+function Settings({ onBack }) {
+  const { token, user } = useAuth();
+  const [keys, setKeys] = useState([]);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [generatedKey, setGeneratedKey] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Subscription state
+  const [subTier, setSubTier] = useState('free');
+  const [subStatus, setSubStatus] = useState('none');
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [billingMessage, setBillingMessage] = useState('');
+
+  const fetchKeys = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/api-keys`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setKeys(data.keys);
+      }
+    } catch (err) {
+      console.error('Failed to fetch API keys:', err);
+    }
+  };
+
+  const fetchBillingStatus = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/billing/status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSubTier(data.subscription.tier);
+        setSubStatus(data.subscription.status);
+      }
+    } catch (err) {
+      console.error('Failed to fetch billing status:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchKeys();
+    fetchBillingStatus();
+  }, [token]);
+
+  const handleGenerateKey = async (e) => {
+    e.preventDefault();
+    if (!newKeyName.trim()) return;
+    setLoading(true);
+    setError('');
+    setGeneratedKey(null);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/api-keys`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: newKeyName })
+      });
+      
+      const data = await response.json();
+      if (response.ok) {
+        setGeneratedKey(data);
+        setNewKeyName('');
+        fetchKeys();
+      } else {
+        setError(data.msg || 'Failed to create key');
+      }
+    } catch (err) {
+      setError('Connection error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRevokeKey = async (id) => {
+    if (!confirm('Are you sure you want to revoke this API key? Applications using it will lose access.')) {
+      return;
+    }
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/api-keys/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        fetchKeys();
+        if (generatedKey && generatedKey.id === id) {
+          setGeneratedKey(null);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to revoke key:', err);
+    }
+  };
+
+  const copyToClipboard = () => {
+    if (!generatedKey) return;
+    navigator.clipboard.writeText(generatedKey.rawKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Mock Stripe checkout trigger
+  const handleUpgrade = async (targetTier) => {
+    setBillingLoading(true);
+    setBillingMessage('');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/billing/checkout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tier: targetTier })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setSubTier(data.subscription.tier);
+        setSubStatus(data.subscription.status);
+        setBillingMessage(`✨ ${data.msg}`);
+      } else {
+        setBillingMessage(`❌ Upgrading failed: ${data.msg}`);
+      }
+    } catch (err) {
+      setBillingMessage('❌ Checkout failed.');
+    } finally {
+      setBillingLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-4xl mx-auto animate-fade-in">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-[#88889c] hover:text-[#ededef] mb-6 transition-colors text-sm"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Workspace
+        </button>
+
+        <h1 className="text-3xl font-extrabold tracking-tight mb-8">Settings</h1>
+
+        <div className="space-y-6">
+          {/* User Profile Info */}
+          <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 shadow-2xl">
+            <h2 className="text-sm font-semibold mb-4 text-[#ededef] uppercase tracking-wider">Account Profile</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div>
+                <span className="text-[#6b6b80] block">Name</span>
+                <span className="text-[#ededef] font-semibold mt-0.5 block">{user?.name}</span>
+              </div>
+              <div>
+                <span className="text-[#6b6b80] block">Email Address</span>
+                <span className="text-[#ededef] font-semibold mt-0.5 block">{user?.email}</span>
+              </div>
+              <div>
+                <span className="text-[#6b6b80] block">Account Role</span>
+                <span className="text-indigo-400 capitalize font-semibold mt-0.5 block">{user?.role}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Billing & Plans Gating */}
+          <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <CreditCard className="w-4.5 h-4.5 text-[#5c68ff]" />
+              <h2 className="text-sm font-semibold text-[#ededef] uppercase tracking-wider">Plan & Subscription Billing</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center border-b border-white/[0.03] pb-6 mb-6 text-xs">
+              <div>
+                <span className="text-[#6b6b80] block">Current Plan Tier</span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl font-bold uppercase tracking-wider mt-1.5">
+                  {subTier} Tier
+                </span>
+                <span className="text-[10px] text-[#88889c] block mt-2">
+                  Status: {subStatus === 'active' ? 'Active subscription (Paid)' : 'Free tier limitations'}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[#6b6b80] block">Workspace Rates Gating</span>
+                <p className="text-[11px] text-[#88889c] mt-1.5 leading-relaxed">
+                  Hourly limit: **{subTier === 'business' ? '5000' : subTier === 'pro' ? '1000' : '100'} requests**. <br />
+                  Task backlog threshold: **{subTier === 'free' ? '50 tasks maximum' : 'Unlimited backlog active'}**.
+                </p>
+              </div>
+            </div>
+
+            {/* Plan selector simulator */}
+            <div className="space-y-3.5">
+              <span className="text-[10px] font-bold text-[#555566] tracking-widest uppercase">Simulate Plan Checkout</span>
+              <div className="flex flex-wrap gap-3">
+                {subTier !== 'free' && (
+                  <button
+                    onClick={() => handleUpgrade('free')}
+                    disabled={billingLoading}
+                    className="bg-zinc-800 hover:bg-zinc-700 text-[#ededef] text-xs font-semibold rounded-xl px-4 py-2 transition-all disabled:opacity-50"
+                  >
+                    Downgrade to Free
+                  </button>
+                )}
+                {subTier !== 'pro' && (
+                  <button
+                    onClick={() => handleUpgrade('pro')}
+                    disabled={billingLoading}
+                    className="bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white text-xs font-semibold rounded-xl px-4 py-2 transition-all disabled:opacity-50"
+                  >
+                    Upgrade to Pro ($5/mo)
+                  </button>
+                )}
+                {subTier !== 'business' && (
+                  <button
+                    onClick={() => handleUpgrade('business')}
+                    disabled={billingLoading}
+                    className="bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white text-xs font-semibold rounded-xl px-4 py-2 transition-all disabled:opacity-50"
+                  >
+                    Upgrade to Business ($15/mo)
+                  </button>
+                )}
+              </div>
+              {billingMessage && (
+                <p className="text-xs text-indigo-400 font-semibold mt-2 bg-indigo-500/5 border border-indigo-500/10 p-2 rounded-xl">
+                  {billingMessage}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* API Keys Panel */}
+          <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <Key className="w-4.5 h-4.5 text-indigo-400" />
+              <h2 className="text-sm font-semibold text-[#ededef] uppercase tracking-wider">API Keys (for MCP Integration)</h2>
+            </div>
+            <p className="text-xs text-[#88889c] mb-6 leading-relaxed">
+              Generate secure API keys to integrate external AI assistants (like Claude Desktop or Cursor IDE) to manage and resolve tasks directly.
+            </p>
+
+            {/* Generated Key Alert */}
+            {generatedKey && (
+              <div className="mb-6 bg-[#1f1f2a] border border-[#5c68ff]/20 rounded-xl p-4 animate-slide-up">
+                <span className="text-[10px] text-indigo-400 font-bold block mb-1">KEY CREATED SUCCESSFULLY</span>
+                <p className="text-[11px] text-[#88889c] mb-3">
+                  Please copy this key now. For security reasons, you will not be able to view it again.
+                </p>
+                <div className="flex items-center gap-2 bg-[#08080a] border border-white/[0.05] rounded-xl p-2.5">
+                  <code className="text-xs text-[#ededef] font-mono break-all flex-1">
+                    {generatedKey.rawKey}
+                  </code>
+                  <button
+                    onClick={copyToClipboard}
+                    className="p-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-white transition-colors"
+                    title="Copy to clipboard"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="mb-4 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-xs text-rose-400 font-semibold">
+                {error}
+              </div>
+            )}
+
+            {/* Create API Key Form */}
+            <form onSubmit={handleGenerateKey} className="flex gap-3 mb-8">
+              <input
+                type="text"
+                value={newKeyName}
+                onChange={(e) => setNewKeyName(e.target.value)}
+                placeholder="Key Name (e.g. Claude Desktop)"
+                className="flex-1 bg-[#08080a] border border-white/[0.05] rounded-xl px-3.5 py-2 text-sm text-[#ededef] placeholder:text-[#444455] focus:outline-none focus:border-[#5c68ff] transition-all"
+                required
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-white hover:bg-[#e4e4e7] text-black rounded-xl px-4 py-2 font-semibold text-xs flex items-center gap-2 transition-all duration-150 active:scale-[0.98] disabled:opacity-50"
+              >
+                <Plus className="w-4 h-4" /> Generate Key
+              </button>
+            </form>
+
+            {/* API Keys Table */}
+            <div className="space-y-3">
+              <h3 className="text-[10px] font-bold text-[#555566] tracking-widest uppercase">Active Keys</h3>
+              {keys.length === 0 ? (
+                <p className="text-xs text-[#88889c] italic">No active API keys found.</p>
+              ) : (
+                <div className="divide-y divide-white/[0.03]">
+                  {keys.map((keyDoc) => (
+                    <div key={keyDoc._id} className="flex items-center justify-between py-3">
+                      <div>
+                        <span className="font-semibold text-xs text-[#ededef] block">{keyDoc.name}</span>
+                        <div className="flex gap-2 text-[10px] text-[#6b6b80] mt-1 font-mono">
+                          <span>Prefix: {keyDoc.keyPrefix}...</span>
+                          <span>•</span>
+                          <span>Last Used: {keyDoc.lastUsedAt ? new Date(keyDoc.lastUsedAt).toLocaleDateString() : 'Never'}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRevokeKey(keyDoc._id)}
+                        className="p-1.5 text-[#555566] hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                        title="Revoke Key"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+  );
+}
+
+export default Settings;
