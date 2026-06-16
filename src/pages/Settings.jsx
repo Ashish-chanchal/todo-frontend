@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Key, Copy, Check, Trash2, ArrowLeft, Plus, CreditCard, ShieldAlert } from 'lucide-react';
+import { Key, Copy, Check, Trash2, ArrowLeft, Plus, CreditCard, ShieldAlert, Terminal } from 'lucide-react';
 
 function Settings({ onBack }) {
   const { token, user } = useAuth();
@@ -8,6 +8,7 @@ function Settings({ onBack }) {
   const [newKeyName, setNewKeyName] = useState('');
   const [generatedKey, setGeneratedKey] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [copiedConfig, setCopiedConfig] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -113,6 +114,26 @@ function Settings({ onBack }) {
     navigator.clipboard.writeText(generatedKey.rawKey);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const mcpUrl = `${import.meta.env.VITE_MCP_SERVER_URL}/mcp`;
+
+  const mcpConfig = generatedKey ? {
+    mcpServers: {
+      todoai: {
+        url: mcpUrl,
+        headers: {
+          'x-api-key': generatedKey.rawKey
+        }
+      }
+    }
+  } : null;
+
+  const copyConfig = () => {
+    if (!mcpConfig) return;
+    navigator.clipboard.writeText(JSON.stringify(mcpConfig, null, 2));
+    setCopiedConfig(true);
+    setTimeout(() => setCopiedConfig(false), 2000);
   };
 
   // Helper to dynamically load the Razorpay checkout script
@@ -340,22 +361,44 @@ function Settings({ onBack }) {
 
             {/* Generated Key Alert */}
             {generatedKey && (
-              <div className="mb-6 bg-[#1f1f2a] border border-[#5c68ff]/20 rounded-xl p-4 animate-slide-up">
-                <span className="text-[10px] text-indigo-400 font-bold block mb-1">KEY CREATED SUCCESSFULLY</span>
-                <p className="text-[11px] text-[#88889c] mb-3">
-                  Please copy this key now. For security reasons, you will not be able to view it again.
-                </p>
-                <div className="flex items-center gap-2 bg-[#08080a] border border-white/[0.05] rounded-xl p-2.5">
-                  <code className="text-xs text-[#ededef] font-mono break-all flex-1">
-                    {generatedKey.rawKey}
-                  </code>
-                  <button
-                    onClick={copyToClipboard}
-                    className="p-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-white transition-colors"
-                    title="Copy to clipboard"
-                  >
-                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
+              <div className="mb-6 bg-[#1f1f2a] border border-[#5c68ff]/20 rounded-xl p-4 animate-slide-up space-y-4">
+                <div>
+                  <span className="text-[10px] text-indigo-400 font-bold block mb-1">KEY CREATED SUCCESSFULLY</span>
+                  <p className="text-[11px] text-[#88889c] mb-3">
+                    Please copy this key now. For security reasons, you will not be able to view it again.
+                  </p>
+                  <div className="flex items-center gap-2 bg-[#08080a] border border-white/[0.05] rounded-xl p-2.5">
+                    <code className="text-xs text-[#ededef] font-mono break-all flex-1">
+                      {generatedKey.rawKey}
+                    </code>
+                    <button
+                      onClick={copyToClipboard}
+                      className="p-2 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-white transition-colors"
+                      title="Copy to clipboard"
+                    >
+                      {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* MCP Config */}
+                <div>
+                  <span className="text-[10px] text-indigo-400 font-bold block mb-1">MCP CONFIGURATION</span>
+                  <p className="text-[11px] text-[#88889c] mb-3">
+                    Add this to your <code className="text-[#ededef]">claude_desktop_config.json</code> or MCP client settings.
+                  </p>
+                  <div className="relative bg-[#08080a] border border-white/[0.05] rounded-xl p-3">
+                    <pre className="text-[11px] text-[#ededef] font-mono whitespace-pre-wrap break-all leading-relaxed">
+                      {JSON.stringify(mcpConfig, null, 2)}
+                    </pre>
+                    <button
+                      onClick={copyConfig}
+                      className="absolute top-2 right-2 p-1.5 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-white transition-colors"
+                      title="Copy config"
+                    >
+                      {copiedConfig ? <Check className="w-3 h-3" /> : <Terminal className="w-3 h-3" />}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
