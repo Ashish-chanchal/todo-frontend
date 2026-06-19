@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Key, Copy, Check, Trash2, ArrowLeft, Plus, CreditCard, ShieldAlert, Terminal } from 'lucide-react';
+import { Key, Copy, Check, Trash2, ArrowLeft, Plus, CreditCard, ShieldAlert, Terminal, UserPlus, Users, MailOpen } from 'lucide-react';
 
-function Settings({ onBack }) {
+function Settings({ onBack, activeTeam = null, onRefreshTeams }) {
   const { token, user } = useAuth();
   const [keys, setKeys] = useState([]);
   const [newKeyName, setNewKeyName] = useState('');
@@ -17,6 +17,21 @@ function Settings({ onBack }) {
   const [subStatus, setSubStatus] = useState('none');
   const [billingLoading, setBillingLoading] = useState(false);
   const [billingMessage, setBillingMessage] = useState('');
+
+  // Team Invite State
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('member');
+  const [inviteError, setInviteError] = useState('');
+  const [inviteSuccess, setInviteSuccess] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
+
+  // Determine current user's role in active workspace
+  const myMemberObj = activeTeam?.members?.find(m => {
+    const idStr = m.userId?._id || m.userId;
+    return idStr === user?.id || idStr === user?._id;
+  });
+  const myRole = myMemberObj ? myMemberObj.role : 'viewer';
+  const canManage = myRole === 'owner' || myRole === 'admin';
 
   const fetchKeys = async () => {
     try {
@@ -106,6 +121,78 @@ function Settings({ onBack }) {
       }
     } catch (err) {
       console.error('Failed to revoke key:', err);
+    }
+  };
+
+  const handleInviteMember = async (e) => {
+    e.preventDefault();
+    if (!inviteEmail.trim() || !activeTeam) return;
+    setInviteLoading(true);
+    setInviteError('');
+    setInviteSuccess('');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/teams/${activeTeam._id}/invite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setInviteSuccess(data.msg || 'Member added successfully');
+        setInviteEmail('');
+        onRefreshTeams();
+      } else {
+        setInviteError(data.msg || 'Failed to add team member');
+      }
+    } catch (err) {
+      setInviteError('Connection error');
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const handleRoleChange = async (memberUserId, role) => {
+    if (!activeTeam) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/teams/${activeTeam._id}/members/${memberUserId}/role`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ role })
+      });
+      if (response.ok) {
+        onRefreshTeams();
+      } else {
+        const data = await response.json();
+        alert(data.msg || 'Failed to update member role');
+      }
+    } catch (err) {
+      console.error('Role update error:', err);
+    }
+  };
+
+  const handleRemoveMember = async (memberUserId) => {
+    if (!activeTeam || !confirm('Are you sure you want to remove this member from the team workspace?')) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/teams/${activeTeam._id}/members/${memberUserId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        onRefreshTeams();
+      } else {
+        const data = await response.json();
+        alert(data.msg || 'Failed to remove member');
+      }
+    } catch (err) {
+      console.error('Remove member error:', err);
     }
   };
 
@@ -252,7 +339,7 @@ function Settings({ onBack }) {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto animate-fade-in">
+    <div className="w-full max-w-4xl mx-auto animate-fade-in pb-12">
         <button
           onClick={onBack}
           className="flex items-center gap-2 text-[#88889c] hover:text-[#ededef] mb-6 transition-colors text-sm"
@@ -281,6 +368,115 @@ function Settings({ onBack }) {
               </div>
             </div>
           </div>
+
+          {/* Active Workspace / Team Members Management */}
+          {activeTeam && (
+            <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 shadow-2xl">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="w-4.5 h-4.5 text-indigo-400" />
+                <h2 className="text-sm font-semibold text-[#ededef] uppercase tracking-wider">Team Workspace: {activeTeam.name}</h2>
+              </div>
+              <p className="text-xs text-[#88889c] mb-6 leading-relaxed">
+                Manage members and roles for this shared team workspace. Your role: <span className="text-indigo-400 font-bold capitalize">{myRole}</span>.
+              </p>
+
+              {/* Invite Member form */}
+              {canManage && (
+                <div className="border-b border-white/[0.03] pb-6 mb-6">
+                  <span className="text-[10px] font-bold text-[#555566] tracking-widest uppercase block mb-3">Add / Invite Collaborator</span>
+                  <form onSubmit={handleInviteMember} className="flex flex-wrap gap-3">
+                    <input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="Collaborator Email Address"
+                      className="flex-1 min-w-[200px] bg-[#08080a] border border-white/[0.05] rounded-xl px-3.5 py-2 text-xs text-[#ededef] placeholder:text-[#444455] focus:outline-none focus:border-[#5c68ff] transition-all"
+                      required
+                    />
+                    <select
+                      value={inviteRole}
+                      onChange={(e) => setInviteRole(e.target.value)}
+                      className="bg-[#08080a] border border-white/[0.05] rounded-xl px-3 py-2 text-xs text-[#ededef] focus:outline-none focus:border-[#5c68ff]"
+                    >
+                      <option value="member">Member (Write access)</option>
+                      <option value="viewer">Viewer (Read-only)</option>
+                      <option value="admin">Admin (Full access)</option>
+                    </select>
+                    <button
+                      type="submit"
+                      disabled={inviteLoading}
+                      className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl px-4 py-2 font-semibold text-xs flex items-center gap-2 transition-all"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" /> {inviteLoading ? 'Adding...' : 'Add Member'}
+                    </button>
+                  </form>
+                  {inviteError && (
+                    <p className="text-xs text-rose-400 mt-2 bg-rose-500/5 border border-rose-500/10 p-2 rounded-xl w-fit">{inviteError}</p>
+                  )}
+                  {inviteSuccess && (
+                    <p className="text-xs text-emerald-400 mt-2 bg-emerald-500/5 border border-emerald-500/10 p-2 rounded-xl w-fit">{inviteSuccess}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Members List Table */}
+              <div className="space-y-3">
+                <span className="text-[10px] font-bold text-[#555566] tracking-widest uppercase block">Workspace Members ({activeTeam.members?.length || 0})</span>
+                <div className="divide-y divide-white/[0.03]">
+                  {activeTeam.members?.map((memberItem) => {
+                    const memberUser = memberItem.userId;
+                    const idStr = memberUser?._id || memberItem.userId;
+                    const isSelf = idStr === user?.id || idStr === user?._id;
+                    return (
+                      <div key={idStr} className="flex items-center justify-between py-3">
+                        <div className="text-left">
+                          <span className="font-semibold text-xs text-[#ededef]">
+                            {memberUser?.name || 'Pending User'} {isSelf && <span className="text-[10px] text-zinc-500 font-normal ml-1">(You)</span>}
+                          </span>
+                          <span className="text-[10px] text-[#6b6b80] block mt-0.5">{memberUser?.email || ''}</span>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {/* Role Selector / Role Badge */}
+                          {canManage && !isSelf && memberItem.role !== 'owner' ? (
+                            <select
+                              value={memberItem.role}
+                              onChange={(e) => handleRoleChange(idStr, e.target.value)}
+                              className="bg-[#08080a] border border-white/[0.05] rounded-xl px-2 py-1 text-[10px] text-zinc-300 focus:outline-none focus:border-[#5c68ff]"
+                            >
+                              <option value="admin">Admin</option>
+                              <option value="member">Member</option>
+                              <option value="viewer">Viewer</option>
+                            </select>
+                          ) : (
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                              memberItem.role === 'owner' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                              memberItem.role === 'admin' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' :
+                              memberItem.role === 'member' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                              'bg-zinc-800 text-zinc-400'
+                            }`}>
+                              {memberItem.role}
+                            </span>
+                          )}
+
+                          {/* Delete Member Button */}
+                          {canManage && !isSelf && memberItem.role !== 'owner' && (
+                            <button
+                              onClick={() => handleRemoveMember(idStr)}
+                              className="p-1 text-[#555566] hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                              title="Remove Member"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Billing & Plans Gating */}
           <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 shadow-2xl">

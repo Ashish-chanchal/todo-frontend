@@ -50,6 +50,10 @@ function Dashboard() {
   const [showNegotiationGate, setShowNegotiationGate] = useState(true);
   const [negotiationData, setNegotiationData] = useState(null);
 
+  // Team Collaboration State
+  const [teams, setTeams] = useState([]);
+  const [activeTeam, setActiveTeam] = useState(null);
+
   // Simulator state
   const [simText, setSimText] = useState('');
   const [simSource, setSimSource] = useState('slack');
@@ -123,7 +127,81 @@ function Dashboard() {
     }
   };
 
+  const fetchTeams = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/teams`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTeams(data.teams);
+        
+        // Match active team
+        if (user && user.currentTeamId) {
+          const active = data.teams.find(t => t._id === user.currentTeamId);
+          setActiveTeam(active || null);
+        } else {
+          setActiveTeam(null);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch teams:', err);
+    }
+  };
+
+  const handleSwitchTeam = async (teamId) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/teams/${teamId === 'personal' ? 'personal' : teamId}/switch`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        if (teamId === 'personal') {
+          setActiveTeam(null);
+          if (user) user.currentTeamId = null;
+        } else {
+          const selectedTeam = teams.find(t => t._id === teamId);
+          setActiveTeam(selectedTeam || null);
+          if (user) user.currentTeamId = teamId;
+        }
+        addLog(`Switched workspace to ${teamId === 'personal' ? 'Personal' : (teams.find(t => t._id === teamId)?.name || 'Team')}`, 'switch');
+        fetchTodos();
+      }
+    } catch (err) {
+      console.error('Failed to switch team:', err);
+    }
+  };
+
+  const handleCreateTeam = async (name) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/teams`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        addLog(`Created workspace: ${name}`, 'create');
+        await fetchTeams();
+        fetchTodos();
+        return true;
+      }
+    } catch (err) {
+      console.error('Failed to create team:', err);
+    }
+    return false;
+  };
+
   useEffect(() => {
+    fetchTeams();
     fetchTodos();
     fetchCommitments();
     fetchNegotiation();
@@ -564,7 +642,14 @@ function Dashboard() {
       <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden z-10">
         
         {/* Docked Pinned Header */}
-        <NavBar onOpenSettings={() => setActiveTab('settings')} activeTab={activeTab} />
+        <NavBar 
+          onOpenSettings={() => setActiveTab('settings')} 
+          activeTab={activeTab} 
+          teams={teams}
+          activeTeam={activeTeam}
+          onSwitchTeam={handleSwitchTeam}
+          onCreateTeam={handleCreateTeam}
+        />
 
         {/* Center Workspace Body Area */}
         <div className="flex-1 flex min-h-0 overflow-hidden">
@@ -631,8 +716,8 @@ function Dashboard() {
                     </div>
                   </div>
                   
-                  <Form getTodos={fetchTodos} />
-                  <TodosList todos={todos} makeComplete={handleMakeComplete} deleteTodo={handleDeleteTodo} fetchTodos={fetchTodos} />
+                  <Form getTodos={fetchTodos} activeTeam={activeTeam} />
+                  <TodosList todos={todos} makeComplete={handleMakeComplete} deleteTodo={handleDeleteTodo} fetchTodos={fetchTodos} activeTeam={activeTeam} />
                 </motion.div>
               )}
 
@@ -656,7 +741,11 @@ function Dashboard() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.15 }}
                 >
-                  <Settings onBack={() => setActiveTab('chat')} />
+                  <Settings 
+                    onBack={() => setActiveTab('chat')} 
+                    activeTeam={activeTeam}
+                    onRefreshTeams={fetchTeams}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>

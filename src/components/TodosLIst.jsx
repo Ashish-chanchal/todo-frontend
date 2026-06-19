@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-function TodosList({ todos, makeComplete, deleteTodo, fetchTodos }) {
+function TodosList({ todos, makeComplete, deleteTodo, fetchTodos, activeTeam }) {
   const { token } = useAuth();
   
   // Local UI states
@@ -141,16 +141,61 @@ function TodosList({ todos, makeComplete, deleteTodo, fetchTodos }) {
     }
   };
 
+  // Local states for assignee filtering
+  const [filterAssigneeId, setFilterAssigneeId] = useState('all');
+
+  // Get unique assignees from the current todos list
+  const uniqueAssignees = todos.reduce((acc, t) => {
+    if (t.assigneeId && !acc.some(a => a._id === t.assigneeId._id)) {
+      acc.push(t.assigneeId);
+    }
+    return acc;
+  }, []);
+
+  const filteredTodos = filterAssigneeId === 'all' 
+    ? todos 
+    : filterAssigneeId === 'unassigned'
+      ? todos.filter(t => !t.assigneeId)
+      : todos.filter(t => t.assigneeId?._id === filterAssigneeId);
+
   // Group todos by status
   const groupedTodos = {
-    todo: todos.filter(t => t.status === 'todo' || (!t.status && !t.completed)),
-    in_progress: todos.filter(t => t.status === 'in_progress'),
-    review: todos.filter(t => t.status === 'review'),
-    done: todos.filter(t => t.status === 'done' || t.completed)
+    todo: filteredTodos.filter(t => t.status === 'todo' || (!t.status && !t.completed)),
+    in_progress: filteredTodos.filter(t => t.status === 'in_progress'),
+    review: filteredTodos.filter(t => t.status === 'review'),
+    done: filteredTodos.filter(t => t.status === 'done' || t.completed)
   };
 
   return (
     <div className="w-full mt-2 select-none">
+      {/* Workspace & Assignee Filter Header */}
+      {activeTeam && (
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5 p-4 glass-panel rounded-2xl border border-white/[0.04]">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">
+              Workspace: {activeTeam.name}
+            </span>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Filter Assignee:</span>
+            <select
+              value={filterAssigneeId}
+              onChange={(e) => setFilterAssigneeId(e.target.value)}
+              className="glass-input rounded-xl px-3 py-1.5 text-[10px] text-zinc-300 focus:outline-none min-w-[140px] bg-zinc-950/80 border border-white/[0.06]"
+            >
+              <option value="all">Show All Tasks</option>
+              <option value="unassigned">Unassigned</option>
+              {uniqueAssignees.map(assignee => (
+                <option key={assignee._id} value={assignee._id}>
+                  {assignee.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-5 items-start">
         {statuses.map((statusCol) => {
           const columnTodos = groupedTodos[statusCol.id] || [];
@@ -353,17 +398,31 @@ function TodosList({ todos, makeComplete, deleteTodo, fetchTodos }) {
 
                         {/* Card Footer: Due dates & delete actions */}
                         <div className="flex justify-between items-center border-t border-white/[0.04] pt-2 text-[9px] text-zinc-500 select-none">
-                          {todo.dueDate ? (
-                            <div className={cn(
-                              "flex items-center gap-1 font-mono",
-                              overdue ? 'text-rose-400 font-bold' : 'text-zinc-500'
-                            )}>
-                              {overdue ? <AlertTriangle className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
-                              <span>{formatDate(todo.dueDate)}</span>
-                            </div>
-                          ) : (
-                            <span />
-                          )}
+                          <div className="flex items-center gap-2">
+                            {todo.dueDate ? (
+                              <div className={cn(
+                                "flex items-center gap-1 font-mono",
+                                overdue ? 'text-rose-400 font-bold' : 'text-zinc-500'
+                              )}>
+                                {overdue ? <AlertTriangle className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
+                                <span>{formatDate(todo.dueDate)}</span>
+                              </div>
+                            ) : (
+                              <span />
+                            )}
+                            
+                            {todo.assigneeId && (
+                              <div 
+                                className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.04] rounded-full pl-1 pr-2 py-0.5 text-zinc-400 hover:text-zinc-200 transition-colors"
+                                title={todo.assigneeId.email}
+                              >
+                                <span className="w-3.5 h-3.5 bg-indigo-500/20 text-indigo-400 text-[8px] font-bold rounded-full flex items-center justify-center">
+                                  {todo.assigneeId.name ? todo.assigneeId.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                                </span>
+                                <span className="text-[8px] max-w-[65px] truncate font-medium">{todo.assigneeId.name}</span>
+                              </div>
+                            )}
+                          </div>
 
                           <button
                             onClick={() => deleteTodo(todo._id)}

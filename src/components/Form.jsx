@@ -3,14 +3,15 @@ import { useAuth } from '../context/AuthContext';
 import { Calendar, Tag } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-function Form({ getTodos }) {
+function Form({ getTodos, activeTeam = null }) {
   const { token } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     priority: 'medium',
     dueDate: '',
-    tags: ''
+    tags: '',
+    assigneeId: ''
   });
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,7 +50,8 @@ function Form({ getTodos }) {
           description: formData.description,
           priority: formData.priority,
           dueDate: formData.dueDate || null,
-          tags: parsedTags
+          tags: parsedTags,
+          assigneeId: formData.assigneeId || null
         })
       });
 
@@ -62,7 +64,8 @@ function Form({ getTodos }) {
           description: '',
           priority: 'medium',
           dueDate: '',
-          tags: ''
+          tags: '',
+          assigneeId: ''
         });
         setTimeout(() => setMessage(''), 3000);
       } else {
@@ -108,7 +111,7 @@ function Form({ getTodos }) {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-white/[0.04]">
+          <div className={`grid grid-cols-1 ${activeTeam ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4 pt-3 border-t border-white/[0.04]`}>
             {/* Priority Picker */}
             <div className="flex flex-col gap-1">
               <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider select-none mb-1">Priority</span>
@@ -137,6 +140,33 @@ function Form({ getTodos }) {
                 })}
               </div>
             </div>
+
+            {/* Assignee Selection (Only visible in active workspaces) */}
+            {activeTeam && (
+              <div className="flex flex-col gap-1">
+                <label htmlFor="assigneeId" className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5 select-none mb-1">
+                  Assignee
+                </label>
+                <select
+                  name="assigneeId"
+                  id="assigneeId"
+                  value={formData.assigneeId}
+                  onChange={handleChange}
+                  className="glass-input rounded-xl px-3 py-1.5 text-xs text-zinc-200 focus:outline-none"
+                >
+                  <option value="">Unassigned</option>
+                  {activeTeam.members?.map(m => {
+                    const memberUser = m.userId;
+                    const idVal = memberUser?._id || m.userId;
+                    return (
+                      <option key={idVal} value={idVal}>
+                        {memberUser?.name || 'Pending Collaborator'}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
 
             {/* Due Date */}
             <div className="flex flex-col gap-1">
