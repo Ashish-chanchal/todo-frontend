@@ -32,7 +32,7 @@ function ApprovalGate({ negotiationData, onApplyOption, onDismiss }) {
         <div>
           <p className="text-xs font-bold text-neutral-300 uppercase tracking-wider">AI Capacity Negotiation</p>
           <p className="text-[10px] text-neutral-500 mt-1 leading-relaxed">
-            Tomorrow backlog requires **{negotiationData.totalLoadMinutes} mins** of focus work. This exceeds your **{negotiationData.capacityMinutes} mins** capacity.
+            Tomorrow backlog requires {negotiationData.totalLoadMinutes} mins of focus work. This exceeds your {negotiationData.capacityMinutes} mins capacity.
           </p>
         </div>
       </div>

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import NavBar from '../components/NavBar';
@@ -29,8 +30,13 @@ import { cn } from '../lib/utils';
 
 function Dashboard() {
   const { token, user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activeTab = useMemo(() => {
+    const path = location.pathname.replace('/dashboard/', '');
+    return ['chat', 'board', 'timeline', 'settings'].includes(path) ? path : 'chat';
+  }, [location.pathname]);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('chat'); // 'chat', 'board', 'settings'
 
   const handleFetchResponse = async (res) => {
     if (res.status === 402 || res.status === 403) {
@@ -66,6 +72,7 @@ function Dashboard() {
     { sender: 'agent', text: "Hello! I am your TodoAI Assistant. You can speak to me in natural language to list, create, complete, or delete tasks. Try typing 'Summarize my day' to get started!", confidence: 1.0 }
   ]);
   const [chatStreaming, setChatStreaming] = useState(false);
+  const [formDisplay, setFormDisplay] = useState('inline'); // 'inline' | 'panel'
   
   // Agent timeline logs state
   const [activityLogs, setActivityLogs] = useState([
@@ -273,7 +280,7 @@ function Dashboard() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text, teamId: activeTeam?._id || null })
       });
 
       if (!(await handleFetchResponse(response))) {
@@ -283,11 +290,25 @@ function Dashboard() {
 
       const data = await response.json();
       if (response.ok) {
-        setChatMessages(prev => [...prev, { 
-          sender: 'agent', 
+        const msg = {
+          sender: 'agent',
           text: data.reply,
-          confidence: data.confidence 
-        }]);
+          type: data.type,
+          confidence: data.confidence,
+          suggestions: data.suggestions,
+        };
+
+        // Attach form data for 'form' type
+        if (data.type === 'form' && data.form) {
+          msg.form = data.form;
+        }
+
+        // Attach buttons for confirm type
+        if (data.type === 'confirm' && data.buttons) {
+          msg.buttons = data.buttons;
+        }
+
+        setChatMessages(prev => [...prev, msg]);
 
         if (data.type === 'create') {
           addLog(`AI created task: ${data.todo?.title}`, 'create');
@@ -314,6 +335,89 @@ function Dashboard() {
     } finally {
       setChatStreaming(false);
     }
+  };
+
+  // Interactive form submission from chat
+  const handleFormSubmit = async (formValues, msg) => {
+    setChatMessages(prev => [...prev, {
+      sender: 'user',
+      text: `Creating task: ${formValues.title}`,
+    }]);
+    setChatStreaming(true);
+
+    try {
+      const tags = formValues.tags
+        ? formValues.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean).slice(0, 3)
+        : [];
+
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/todo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: formValues.title,
+          description: formValues.description || '',
+          priority: formValues.priority || 'medium',
+          dueDate: formValues.dueDate || null,
+          tags,
+          teamId: activeTeam?._id || null,
+        })
+      });
+
+      if (!(await handleFetchResponse(response))) {
+        setChatStreaming(false);
+        return;
+      }
+
+      const data = await response.json();
+      if (response.ok) {
+        setChatMessages(prev => [...prev, {
+          sender: 'agent',
+          text: `Task created: "${data.todo?.title}" \u2014 Priority: ${data.todo?.priority}${data.todo?.dueDate ? ', Due: ' + new Date(data.todo.dueDate).toLocaleDateString() : ''}.`,
+          type: 'create',
+          suggestions: [
+            { label: 'Add another task', icon: 'sparkles' },
+            { label: 'List all tasks', icon: 'list' },
+          ]
+        }]);
+        addLog(`Created task: ${data.todo?.title}`, 'create');
+        fetchTodos();
+      } else {
+        setChatMessages(prev => [...prev, {
+          sender: 'agent',
+          text: `Failed to create task: ${data.msg || 'Unknown error'}`
+        }]);
+      }
+    } catch (err) {
+      setChatMessages(prev => [...prev, {
+        sender: 'agent',
+        text: "Couldn't reach the backend. Please ensure the server is running."
+      }]);
+    } finally {
+      setChatStreaming(false);
+    }
+  };
+
+  // Button click handler (confirms, cancels, etc.)
+  const handleButtonClick = async (btn, msg) => {
+    if (btn.action === 'cancel') {
+      setChatMessages(prev => [...prev, {
+        sender: 'agent',
+        text: 'Action cancelled. Let me know if you need anything else!',
+        suggestions: [
+          { label: 'Create a task', icon: 'sparkles' },
+          { label: 'List all tasks', icon: 'list' },
+        ]
+      }]);
+      return;
+    }
+  };
+
+  // Suggestion chip click — treat as user message
+  const handleSuggestionClick = (label) => {
+    handleSendChatMessage(label);
   };
 
   // AI Prioritization sort trigger
@@ -496,7 +600,7 @@ function Dashboard() {
             <span className="text-[9px] font-bold text-zinc-500 px-3 tracking-widest uppercase mb-1">Workspaces</span>
             
             <button
-              onClick={() => setActiveTab('chat')}
+              onClick={() => navigate('/dashboard/chat')}
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all duration-150 relative overflow-hidden border border-transparent",
                 activeTab === 'chat' ? 'text-white font-semibold' : 'text-zinc-400 hover:text-white hover:bg-white/[0.02]'
@@ -517,7 +621,7 @@ function Dashboard() {
             </button>
 
             <button
-              onClick={() => setActiveTab('board')}
+              onClick={() => navigate('/dashboard/board')}
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all duration-150 relative overflow-hidden border border-transparent",
                 activeTab === 'board' ? 'text-white font-semibold' : 'text-zinc-400 hover:text-white hover:bg-white/[0.02]'
@@ -537,7 +641,7 @@ function Dashboard() {
             </button>
 
             <button
-              onClick={() => setActiveTab('timeline')}
+              onClick={() => navigate('/dashboard/timeline')}
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all duration-150 relative overflow-hidden border border-transparent",
                 activeTab === 'timeline' ? 'text-white font-semibold' : 'text-zinc-400 hover:text-white hover:bg-white/[0.02]'
@@ -557,7 +661,7 @@ function Dashboard() {
             </button>
 
             <button
-              onClick={() => setActiveTab('settings')}
+              onClick={() => navigate('/dashboard/settings')}
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all duration-150 relative overflow-hidden border border-transparent",
                 activeTab === 'settings' ? 'text-white font-semibold' : 'text-zinc-400 hover:text-white hover:bg-white/[0.02]'
@@ -648,7 +752,7 @@ function Dashboard() {
         
         {/* Docked Pinned Header */}
         <NavBar 
-          onOpenSettings={() => setActiveTab('settings')} 
+          onOpenSettings={() => navigate('/dashboard/settings')} 
           activeTab={activeTab} 
           teams={teams}
           activeTeam={activeTeam}
@@ -672,21 +776,66 @@ function Dashboard() {
                   className="flex flex-col gap-6 max-w-4xl mx-auto h-full justify-between"
                 >
                   {/* Unified Header Card */}
-                  <div className="glass-panel rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 relative overflow-hidden">
+                  <div className="glass-panel rounded-2xl p-4 flex items-center justify-between gap-4 relative overflow-hidden">
                     <div>
-                      <h2 className="text-md font-bold text-white">Interactive Assistant</h2>
-                      <p className="text-xs text-zinc-400 mt-0.5">Command workspace tasks using natural language speech</p>
+                      <h2 className="text-sm font-bold text-white">Interactive Assistant</h2>
+                      <p className="text-[10px] text-zinc-400 mt-0.5">Command workspace tasks using natural language speech</p>
                     </div>
-                    <div className="flex gap-2 items-center bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full text-xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
-                      <span className="text-[9px] text-emerald-400 font-mono font-bold uppercase tracking-wider">SSE Active</span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setFormDisplay(formDisplay === 'inline' ? 'panel' : 'inline')}
+                        className={`text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg border transition-all ${
+                          formDisplay === 'panel'
+                            ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                            : 'bg-zinc-800/50 text-zinc-500 border-white/[0.04] hover:text-zinc-300'
+                        }`}
+                      >
+                        {formDisplay === 'panel' ? 'In Forms' : 'Pane'}
+                      </button>
+                      <div className="flex gap-1.5 items-center bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-full">
+                        <span className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
+                        <span className="text-[7px] text-emerald-400 font-mono font-bold uppercase tracking-wider">Live</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Main Chat Feed Box */}
-                  <div className="glass-panel rounded-2xl flex flex-col justify-between flex-1 min-h-[400px] overflow-hidden">
-                    <ChatFeed messages={chatMessages} streaming={chatStreaming} />
-                    <NLInput onSendMessage={handleSendChatMessage} disabled={chatStreaming} />
+                  {/* Main Chat + Form area */}
+                  <div className="flex gap-4 flex-1 min-h-0">
+                    {/* Chat feed */}
+                    <div className="glass-panel rounded-2xl flex flex-col justify-between flex-1 min-h-0 overflow-hidden">
+                      <ChatFeed
+                        messages={chatMessages}
+                        streaming={chatStreaming}
+                        onFormSubmit={handleFormSubmit}
+                        onSuggestionClick={handleSuggestionClick}
+                        onButtonClick={handleButtonClick}
+                        formDisplay={formDisplay}
+                      />
+                      <NLInput
+                        onSendMessage={handleSendChatMessage}
+                        onSuggestionClick={handleSuggestionClick}
+                        disabled={chatStreaming}
+                      />
+                    </div>
+
+                    {/* Panel form area: shown only in 'panel' mode and when there's a form message */}
+                    {formDisplay === 'panel' && (() => {
+                      const formMsg = [...chatMessages].reverse().find(m => m.type === 'form');
+                      return formMsg && formMsg.form ? (
+                        <div className="w-72 shrink-0 flex flex-col">
+                          <div className="glass-panel rounded-2xl px-4 py-3 overflow-hidden">
+                            <span className="text-[8px] font-bold text-indigo-400 uppercase tracking-widest block mb-2">
+                              {formMsg.form.title || 'Action Required'}
+                            </span>
+                            <TaskFormCard
+                              form={formMsg.form}
+                              onSubmit={(values) => handleFormSubmit(values, formMsg)}
+                              onCancel={() => handleButtonClick({ action: 'cancel' }, formMsg)}
+                            />
+                          </div>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </motion.div>
               )}
@@ -747,7 +896,7 @@ function Dashboard() {
                   transition={{ duration: 0.15 }}
                 >
                   <Settings 
-                    onBack={() => setActiveTab('chat')} 
+                    onBack={() => navigate('/dashboard/chat')} 
                     activeTeam={activeTeam}
                     onRefreshTeams={fetchTeams}
                   />

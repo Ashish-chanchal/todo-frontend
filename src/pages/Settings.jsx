@@ -499,8 +499,8 @@ function Settings({ onBack, activeTeam = null, onRefreshTeams }) {
               <div>
                 <span className="text-[#6b6b80] block">Workspace Rates Gating</span>
                 <p className="text-[11px] text-[#88889c] mt-1.5 leading-relaxed">
-                  Hourly limit: **{subTier === 'business' ? '5000' : subTier === 'pro' ? '1000' : '100'} requests**. <br />
-                  Task backlog threshold: **{subTier === 'free' ? '50 tasks maximum' : 'Unlimited backlog active'}**.
+                  Hourly limit: {subTier === 'business' ? '5000' : subTier === 'pro' ? '1000' : '100'} requests. <br />
+                  Task backlog threshold: {subTier === 'free' ? '50 tasks maximum' : 'Unlimited backlog active'}.
                 </p>
               </div>
             </div>
