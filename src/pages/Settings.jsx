@@ -325,19 +325,19 @@ function Settings({ onBack }) {
                 {subTier !== 'pro' && (
                   <button
                     onClick={() => handleUpgrade('pro')}
-                    disabled={billingLoading}
-                    className="bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white text-xs font-semibold rounded-xl px-4 py-2 transition-all disabled:opacity-50"
+                    disabled={true}
+                    className="bg-zinc-800/40 text-zinc-500 text-xs font-semibold rounded-xl px-4 py-2 cursor-not-allowed"
                   >
-                    Upgrade to Pro ($5/mo)
+                    Upgrade Disabled
                   </button>
                 )}
                 {subTier !== 'business' && (
                   <button
                     onClick={() => handleUpgrade('business')}
-                    disabled={billingLoading}
-                    className="bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white text-xs font-semibold rounded-xl px-4 py-2 transition-all disabled:opacity-50"
+                    disabled={true}
+                    className="bg-zinc-800/40 text-zinc-500 text-xs font-semibold rounded-xl px-4 py-2 cursor-not-allowed"
                   >
-                    Upgrade to Business ($15/mo)
+                    Upgrade Disabled
                   </button>
                 )}
               </div>

@@ -117,4 +117,15 @@
   .animate-float-2 {
     animation: float-glow-2 15s ease-in-out infinite;
   }
+
+  /* Pipeline Flow Dash Animation */
+  @keyframes pipeline-flow {
+    to {
+      stroke-dashoffset: -100px;
+    }
+  }
+
+  .animate-pipeline-flow {
+    animation: pipeline-flow 4s linear infinite;
+  }
 }

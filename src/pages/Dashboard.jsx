@@ -11,6 +11,7 @@ import ApprovalGate from '../components/ApprovalGate';
 import CommitmentCard from '../components/CommitmentCard';
 import Settings from './Settings';
 import TimelineView from '../components/TimelineView';
+import UpgradeModal from '../components/UpgradeModal';
 import { 
   Sparkles, 
   LayoutGrid, 
@@ -27,8 +28,22 @@ import {
 import { cn } from '../lib/utils';
 
 function Dashboard() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('chat'); // 'chat', 'board', 'settings'
+
+  const handleFetchResponse = async (res) => {
+    if (res.status === 402 || res.status === 403) {
+      const data = await res.json();
+      setChatMessages(prev => [...prev, { 
+        sender: 'agent', 
+        text: `⚠️ Limit Hit: ${data.msg || 'This feature requires a premium plan.'}` 
+      }]);
+      setIsUpgradeModalOpen(true);
+      return false;
+    }
+    return true;
+  };
   const [todos, setTodos] = useState([]);
   const [commitments, setCommitments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -78,6 +93,7 @@ function Dashboard() {
           'Authorization': `Bearer ${token}`
         }
       });
+      if (!(await handleFetchResponse(response))) return;
       if (response.ok) {
         const data = await response.json();
         setTodos(data.todos);
@@ -130,6 +146,7 @@ function Dashboard() {
         },
         body: JSON.stringify({ id })
       });
+      if (!(await handleFetchResponse(res))) return;
       if (res.ok) {
         const data = await res.json();
         addLog(`Completed: ${data.todo?.title || 'task'}`, 'complete');
@@ -151,6 +168,7 @@ function Dashboard() {
         },
         body: JSON.stringify({ id })
       });
+      if (!(await handleFetchResponse(res))) return;
       if (res.ok) {
         addLog(`Deleted: ${todoToDelete?.title || 'task'}`, 'delete');
         fetchTodos();
@@ -174,6 +192,11 @@ function Dashboard() {
         },
         body: JSON.stringify({ text })
       });
+
+      if (!(await handleFetchResponse(response))) {
+        setChatStreaming(false);
+        return;
+      }
 
       const data = await response.json();
       if (response.ok) {
@@ -674,6 +697,16 @@ function Dashboard() {
 
         </div>
       </div>
+
+      <UpgradeModal 
+        isOpen={isUpgradeModalOpen} 
+        onClose={() => setIsUpgradeModalOpen(false)} 
+        token={token} 
+        user={user} 
+        onUpgradeSuccess={() => {
+          fetchTodos();
+        }}
+      />
     </div>
   );
 }

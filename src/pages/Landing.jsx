@@ -10,8 +10,8 @@ import {
   HelpCircle,
   Workflow
 } from 'lucide-react';
+import SplineWorkflow from '../components/SplineWorkflow';
 import { AIFlow } from '../components/AIFlow';
-
 function Landing({ onGetStarted }) {
   const [openFaq, setOpenFaq] = useState(null);
 
@@ -100,7 +100,8 @@ function Landing({ onGetStarted }) {
         </div>
 
         {/* Dynamic pipeline stepper */}
-        <AIFlow />
+        <SplineWorkflow />
+           <AIFlow />
       </section>
 
       {/* Bento Grid Features Layout */}

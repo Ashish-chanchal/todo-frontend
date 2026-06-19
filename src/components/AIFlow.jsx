@@ -24,7 +24,7 @@ export function AIFlow() {
   const [activeStep, setActiveStep] = useState(null); // null, 'source', 'classifier', 'extractor', 'conflict', 'dispatch'
   const [logs, setLogs] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
-  const consoleEndRef = useRef(null);
+  const consoleContainerRef = useRef(null);
 
   const presets = [
     {
@@ -64,8 +64,8 @@ export function AIFlow() {
   };
 
   useEffect(() => {
-    if (consoleEndRef.current) {
-      consoleEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (consoleContainerRef.current) {
+      consoleContainerRef.current.scrollTop = consoleContainerRef.current.scrollHeight;
     }
   }, [logs]);
 
@@ -564,7 +564,7 @@ export function AIFlow() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-1.5 max-h-[150px] custom-scrollbar text-[10px] pr-2 scroll-smooth">
+            <div ref={consoleContainerRef} className="flex-1 overflow-y-auto space-y-1.5 max-h-[150px] custom-scrollbar text-[10px] pr-2 scroll-smooth">
               {logs.length === 0 ? (
                 <div className="text-zinc-600 italic select-none">
                   Standby. Awaiting trigger signal...
@@ -589,7 +589,6 @@ export function AIFlow() {
                   );
                 })
               )}
-              <div ref={consoleEndRef} />
             </div>
           </div>
 
