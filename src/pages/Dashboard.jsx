@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import NavBar from '../components/NavBar';
@@ -53,6 +53,7 @@ function Dashboard() {
   // Team Collaboration State
   const [teams, setTeams] = useState([]);
   const [activeTeam, setActiveTeam] = useState(null);
+  const initialReconcileDone = useRef(false);
 
   // Simulator state
   const [simText, setSimText] = useState('');
@@ -138,19 +139,25 @@ function Dashboard() {
       if (response.ok) {
         const data = await response.json();
         setTeams(data.teams);
-        
-        // Match active team
-        if (user && user.currentTeamId) {
-          const active = data.teams.find(t => t._id === user.currentTeamId);
-          setActiveTeam(active || null);
-        } else {
-          setActiveTeam(null);
-        }
       }
     } catch (err) {
       console.error('Failed to fetch teams:', err);
     }
   };
+
+  // Reconcile activeTeam when both teams and currentTeamId are loaded (initial mount only)
+  useEffect(() => {
+    if (initialReconcileDone.current) return;
+    if (teams.length > 0) {
+      if (user?.currentTeamId) {
+        const active = teams.find(t => t._id === user.currentTeamId);
+        setActiveTeam(active || null);
+      } else {
+        setActiveTeam(null);
+      }
+      initialReconcileDone.current = true;
+    }
+  }, [teams, user?.currentTeamId]);
 
   const handleSwitchTeam = async (teamId) => {
     try {
@@ -163,11 +170,9 @@ function Dashboard() {
       if (response.ok) {
         if (teamId === 'personal') {
           setActiveTeam(null);
-          if (user) user.currentTeamId = null;
         } else {
           const selectedTeam = teams.find(t => t._id === teamId);
           setActiveTeam(selectedTeam || null);
-          if (user) user.currentTeamId = teamId;
         }
         addLog(`Switched workspace to ${teamId === 'personal' ? 'Personal' : (teams.find(t => t._id === teamId)?.name || 'Team')}`, 'switch');
         fetchTodos();
