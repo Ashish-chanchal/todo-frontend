@@ -898,6 +898,7 @@ function Dashboard() {
                   <Settings 
                     onBack={() => navigate('/dashboard/chat')} 
                     activeTeam={activeTeam}
+                    teams={teams}
                     onRefreshTeams={fetchTeams}
                   />
                 </motion.div>

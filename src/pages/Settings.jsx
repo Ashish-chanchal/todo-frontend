@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Key, Copy, Check, Trash2, ArrowLeft, Plus, CreditCard, ShieldAlert, Terminal, UserPlus, Users, MailOpen } from 'lucide-react';
 
-function Settings({ onBack, activeTeam = null, onRefreshTeams }) {
+function Settings({ onBack, activeTeam = null, teams = [], onRefreshTeams }) {
   const { token, user } = useAuth();
   const [keys, setKeys] = useState([]);
   const [newKeyName, setNewKeyName] = useState('');
+  const [newKeyTeamId, setNewKeyTeamId] = useState('');
   const [generatedKey, setGeneratedKey] = useState(null);
   const [copied, setCopied] = useState(false);
   const [copiedConfig, setCopiedConfig] = useState(false);
@@ -84,7 +85,7 @@ function Settings({ onBack, activeTeam = null, onRefreshTeams }) {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name: newKeyName })
+        body: JSON.stringify({ name: newKeyName, teamId: newKeyTeamId || null })
       });
       
       const data = await response.json();
@@ -606,15 +607,25 @@ function Settings({ onBack, activeTeam = null, onRefreshTeams }) {
             )}
 
             {/* Create API Key Form */}
-            <form onSubmit={handleGenerateKey} className="flex gap-3 mb-8">
+            <form onSubmit={handleGenerateKey} className="flex flex-wrap gap-3 mb-8">
               <input
                 type="text"
                 value={newKeyName}
                 onChange={(e) => setNewKeyName(e.target.value)}
                 placeholder="Key Name (e.g. Claude Desktop)"
-                className="flex-1 bg-[#08080a] border border-white/[0.05] rounded-xl px-3.5 py-2 text-sm text-[#ededef] placeholder:text-[#444455] focus:outline-none focus:border-[#5c68ff] transition-all"
+                className="flex-1 min-w-[180px] bg-[#08080a] border border-white/[0.05] rounded-xl px-3.5 py-2 text-sm text-[#ededef] placeholder:text-[#444455] focus:outline-none focus:border-[#5c68ff] transition-all"
                 required
               />
+              <select
+                value={newKeyTeamId}
+                onChange={(e) => setNewKeyTeamId(e.target.value)}
+                className="bg-[#08080a] border border-white/[0.05] rounded-xl px-3 py-2 text-xs text-[#ededef] focus:outline-none focus:border-[#5c68ff]"
+              >
+                <option value="">Personal workspace (no team scope)</option>
+                {teams.map(t => (
+                  <option key={t._id} value={t._id}>{t.name}</option>
+                ))}
+              </select>
               <button
                 type="submit"
                 disabled={loading}
@@ -635,10 +646,16 @@ function Settings({ onBack, activeTeam = null, onRefreshTeams }) {
                     <div key={keyDoc._id} className="flex items-center justify-between py-3">
                       <div>
                         <span className="font-semibold text-xs text-[#ededef] block">{keyDoc.name}</span>
-                        <div className="flex gap-2 text-[10px] text-[#6b6b80] mt-1 font-mono">
+                        <div className="flex flex-wrap gap-2 text-[10px] text-[#6b6b80] mt-1 font-mono">
                           <span>Prefix: {keyDoc.keyPrefix}...</span>
                           <span>•</span>
                           <span>Last Used: {keyDoc.lastUsedAt ? new Date(keyDoc.lastUsedAt).toLocaleDateString() : 'Never'}</span>
+                          {keyDoc.teamId && (
+                            <>
+                              <span>•</span>
+                              <span className="text-indigo-400">Workspace: {keyDoc.teamId.name || keyDoc.teamId}</span>
+                            </>
+                          )}
                         </div>
                       </div>
                       <button
