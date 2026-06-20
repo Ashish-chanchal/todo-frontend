@@ -240,6 +240,95 @@ function AdminDashboard({ onBack }) {
             <span className="text-[10px] text-indigo-400 mt-1 block">API key routing metrics</span>
           </div>
         </div>
+        {/* Visual Analytics SVG Charts */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* MRR Analytics Chart */}
+          <div className="bg-[#121216]/60 border border-white/[0.04] rounded-2xl p-5 shadow-sm backdrop-blur-xl relative overflow-hidden group">
+            <span className="text-[10px] font-bold text-[#555566] tracking-widest uppercase block mb-3">MRR Growth Trend</span>
+            <div className="h-28 w-full flex items-end">
+              <svg className="w-full h-full" viewBox="0 0 300 100" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="mrrGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#818cf8" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#818cf8" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M 0 90 Q 50 70 100 80 T 200 40 T 300 15"
+                  fill="none"
+                  stroke="#818cf8"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  className="animate-dash"
+                  style={{ strokeDasharray: '600', strokeDashoffset: '0' }}
+                />
+                <path
+                  d="M 0 90 Q 50 70 100 80 T 200 40 T 300 15 L 300 100 L 0 100 Z"
+                  fill="url(#mrrGrad)"
+                />
+                {/* Reference dots with hover effects */}
+                <circle cx="100" cy="80" r="4" fill="#818cf8" className="hover:scale-150 transition-all cursor-pointer" />
+                <circle cx="200" cy="40" r="4" fill="#818cf8" className="hover:scale-150 transition-all cursor-pointer" />
+                <circle cx="300" cy="15" r="4" fill="#818cf8" className="hover:scale-150 transition-all cursor-pointer" />
+              </svg>
+            </div>
+            <div className="flex justify-between items-center mt-3 text-[10px] text-[#555566] font-semibold">
+              <span>Q1</span>
+              <span>Q2</span>
+              <span>Live MRR (${stats?.mrr || 0})</span>
+            </div>
+          </div>
+
+          {/* AI Token Allocation Chart */}
+          <div className="bg-[#121216]/60 border border-white/[0.04] rounded-2xl p-5 shadow-sm backdrop-blur-xl relative overflow-hidden group">
+            <span className="text-[10px] font-bold text-[#555566] tracking-widest uppercase block mb-3">AI Token Volumes</span>
+            <div className="h-28 w-full flex items-end justify-between gap-2.5">
+              {[35, 60, 45, 80, 50, 95, 70].map((val, idx) => (
+                <div key={idx} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                  <div className="w-full bg-[#1e1e26] rounded-t relative overflow-hidden" style={{ height: `${val}%` }}>
+                    <div className="absolute inset-0 bg-gradient-to-t from-rose-500/85 to-amber-500/80 rounded-t transition-all duration-500 origin-bottom hover:brightness-125" />
+                  </div>
+                  <span className="text-[8px] text-[#555566] font-mono">D{idx+1}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between items-center mt-3 text-[10px] text-[#555566] font-semibold">
+              <span>Daily usage spike tracking</span>
+            </div>
+          </div>
+
+          {/* Task Completions Analytics Chart */}
+          <div className="bg-[#121216]/60 border border-white/[0.04] rounded-2xl p-5 shadow-sm backdrop-blur-xl relative overflow-hidden group">
+            <span className="text-[10px] font-bold text-[#555566] tracking-widest uppercase block mb-3">Task Completion Velocity</span>
+            <div className="h-28 w-full flex items-end">
+              <svg className="w-full h-full" viewBox="0 0 300 100" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="compGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M 0 85 Q 75 90 150 50 T 300 20"
+                  fill="none"
+                  stroke="#10b981"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M 0 85 Q 75 90 150 50 T 300 20 L 300 100 L 0 100 Z"
+                  fill="url(#compGrad)"
+                />
+                <circle cx="150" cy="50" r="4" fill="#10b981" />
+                <circle cx="300" cy="20" r="4" fill="#10b981" />
+              </svg>
+            </div>
+            <div className="flex justify-between items-center mt-3 text-[10px] text-[#555566] font-semibold">
+              <span>Sprint Velocity</span>
+              <span>{stats?.completedTodos || 0} / {stats?.totalTodos || 0} Tasks</span>
+            </div>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
@@ -313,14 +402,61 @@ function AdminDashboard({ onBack }) {
                               <span className="text-[#6b6b80] block font-mono text-[10px]">{u.email}</span>
                             </td>
                             <td className="py-3">
-                              <span className={`px-1.5 py-0.5 rounded font-bold uppercase text-[9px] ${
-                                u.tier === 'business' ? 'bg-[#5c68ff]/10 text-[#a3a8ff]' :
-                                u.tier === 'pro' ? 'bg-amber-500/10 text-[#fef3c7]' : 'bg-[#121216] border border-white/[0.05] text-[#88889c]'
-                              }`}>
-                                {u.tier}
-                              </span>
+                              <select
+                                value={u.tier || 'free'}
+                                onChange={async (e) => {
+                                  const newTier = e.target.value;
+                                  try {
+                                    const res = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/admin/users/${u._id}`, {
+                                      method: 'PATCH',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                      },
+                                      body: JSON.stringify({ tier: newTier })
+                                    });
+                                    if (res.ok) {
+                                      fetchUsers();
+                                      fetchStats();
+                                    }
+                                  } catch (err) {
+                                    console.error('Failed to update tier:', err);
+                                  }
+                                }}
+                                className="bg-[#121216] border border-white/[0.08] hover:border-white/[0.15] text-[#ededef] text-[10px] font-bold rounded px-1.5 py-0.5 focus:outline-none focus:border-indigo-500/50 uppercase transition-all"
+                              >
+                                <option value="free" className="bg-[#08080a] text-[#88889c]">Free</option>
+                                <option value="pro" className="bg-[#08080a] text-[#fef3c7]">Pro</option>
+                                <option value="business" className="bg-[#08080a] text-[#a3a8ff]">Business</option>
+                              </select>
                             </td>
-                            <td className="py-3 text-[#c9cdd6] capitalize">{u.role}</td>
+                            <td className="py-3">
+                              <select
+                                value={u.role || 'user'}
+                                onChange={async (e) => {
+                                  const newRole = e.target.value;
+                                  try {
+                                    const res = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/admin/users/${u._id}`, {
+                                      method: 'PATCH',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                      },
+                                      body: JSON.stringify({ role: newRole })
+                                    });
+                                    if (res.ok) {
+                                      fetchUsers();
+                                    }
+                                  } catch (err) {
+                                    console.error('Failed to update role:', err);
+                                  }
+                                }}
+                                className="bg-[#121216] border border-white/[0.08] hover:border-white/[0.15] text-[#ededef] text-[10px] font-semibold rounded px-1.5 py-0.5 focus:outline-none focus:border-indigo-500/50 capitalize transition-all"
+                              >
+                                <option value="user" className="bg-[#08080a]">User</option>
+                                <option value="admin" className="bg-[#08080a]">Admin</option>
+                              </select>
+                            </td>
                             <td className="py-3 text-right">
                               <button
                                 onClick={() => toggleSuspended(u._id, u.suspended)}
@@ -518,6 +654,26 @@ function AdminDashboard({ onBack }) {
                     {health?.memory ? Math.round(health.memory.usage * 100) : 0}%
                   </span>
                 </div>
+                {health?.memory?.rss && (
+                  <div className="border-t border-white/[0.03] pt-2 mt-2 space-y-1.5 font-mono text-[10px]">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#555566]">RSS</span>
+                      <span className="text-[#ededef]">{(health.memory.rss / 1024 / 1024).toFixed(1)} MB</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#555566]">Heap Total</span>
+                      <span className="text-[#ededef]">{(health.memory.heapTotal / 1024 / 1024).toFixed(1)} MB</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#555566]">Heap Used</span>
+                      <span className="text-[#ededef]">{(health.memory.heapUsed / 1024 / 1024).toFixed(1)} MB</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#555566]">External</span>
+                      <span className="text-[#ededef]">{(health.memory.external / 1024 / 1024).toFixed(1)} MB</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -25,7 +25,8 @@ import {
   ListTodo,
   CheckCircle,
   AlertCircle,
-  Workflow
+  Workflow,
+  X
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -79,6 +80,30 @@ function Dashboard() {
   const [activityLogs, setActivityLogs] = useState([
     { action: "Initialized TodoAI Workspace", time: new Date().toLocaleTimeString(), type: "create" }
   ]);
+
+  const [announcement, setAnnouncement] = useState(null);
+
+  const fetchAnnouncement = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/announcements/active`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.announcement) {
+          const dismissedId = localStorage.getItem('dismissed_announcement_id');
+          if (dismissedId !== data.announcement._id) {
+            setAnnouncement(data.announcement);
+          }
+        } else {
+          setAnnouncement(null);
+        }
+      }
+    } catch (err) {
+      console.error('Fetch announcement error:', err);
+    }
+  };
 
   const fetchNegotiation = async () => {
     if (!token) return;
@@ -218,6 +243,7 @@ function Dashboard() {
     fetchTodos();
     fetchCommitments();
     fetchNegotiation();
+    fetchAnnouncement();
   }, [token]);
 
   const addLog = (action, type = 'create') => {
@@ -767,6 +793,28 @@ function Dashboard() {
           onSwitchTeam={handleSwitchTeam}
           onCreateTeam={handleCreateTeam}
         />
+
+        {announcement && (
+          <div className="mx-6 lg:mx-8 mt-4 bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3 text-xs text-rose-400 font-semibold flex items-center justify-between gap-4 animate-slide-up shadow-[0_0_15px_rgba(239,68,68,0.1)] z-20">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+              </span>
+              <span className="font-mono uppercase tracking-wider text-[10px] text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/15">System Announcement</span>
+              <span className="text-zinc-200">{announcement.text}</span>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem('dismissed_announcement_id', announcement._id);
+                setAnnouncement(null);
+              }}
+              className="p-1 hover:bg-white/[0.04] rounded-lg transition-colors text-zinc-400 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Center Workspace Body Area */}
         <div className="flex-1 flex min-h-0 overflow-hidden">
