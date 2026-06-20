@@ -22,9 +22,9 @@ function SuggestionChips({ suggestions, onClick, compact }) {
           <button
             key={i}
             onClick={() => onClick(label)}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-zinc-800/60 hover:bg-zinc-700/80 border border-white/[0.04] hover:border-indigo-500/30 rounded-xl text-[10px] text-zinc-300 hover:text-white font-medium transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-black/40 hover:bg-zinc-800 border border-zinc-800/80 hover:border-zinc-700 rounded-xl text-[10px] text-zinc-400 hover:text-zinc-200 transition-all font-mono"
           >
-            {IconComp && <IconComp className="w-3 h-3 text-indigo-400" />}
+            {IconComp && <IconComp className="w-3 h-3 text-zinc-500" />}
             {label}
           </button>
         );

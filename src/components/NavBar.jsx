@@ -32,35 +32,35 @@ function NavBar({ onOpenSettings, activeTab, teams = [], activeTeam = null, onSw
   };
 
   return (
-    <nav className="h-16 w-full px-6 border-b border-white/[0.05] bg-[#0c0c10]/45 backdrop-blur-md flex items-center justify-between z-50 relative">
+    <nav className="h-16 w-full px-6 border-b border-white/[0.04] bg-[#0c0c10]/40 backdrop-blur-xl flex items-center justify-between z-50 relative select-none">
       
       {/* Left side: Breadcrumb / Workspace Switcher */}
       <div className="flex items-center gap-3 text-xs text-zinc-400 select-none relative">
-        <FolderKanban className="w-4 h-4 text-indigo-400" />
+        <FolderKanban className="w-4 h-4 text-[#818cf8]" />
         
         {/* Workspace Dropdown Trigger */}
         <div className="relative">
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] text-zinc-200 hover:text-white font-medium transition-all active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.05] text-zinc-200 hover:text-white font-medium transition-all duration-300 active:scale-[0.98] shadow-sm"
           >
             {activeTeam ? (
               <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-tight">
-                <Users className="w-3.5 h-3.5 text-indigo-400" /> {activeTeam.name}
+                <Users className="w-3.5 h-3.5 text-[#818cf8]" /> {activeTeam.name}
               </span>
             ) : (
               <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-tight">
                 <User className="w-3.5 h-3.5 text-zinc-500" /> Personal Workspace
               </span>
             )}
-            <ChevronDown className={`w-3 h-3 text-zinc-500 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-3 h-3 text-zinc-500 transition-transform duration-300 ${dropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {/* Switcher Dropdown Menu */}
           {dropdownOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-              <div className="absolute left-0 mt-2 w-56 rounded-2xl bg-[#09090b]/95 border border-white/[0.07] shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-xl p-2 z-50 flex flex-col gap-1 animate-fade-in text-left">
+              <div className="absolute left-0 mt-2 w-56 rounded-2xl bg-[#09090b]/90 border border-white/[0.06] shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-2xl p-2 z-50 flex flex-col gap-1 animate-fade-in text-left">
                 <span className="px-3 py-1.5 text-[8px] font-bold text-zinc-500 tracking-widest uppercase">Select Workspace</span>
                 
                 {/* Personal Option */}

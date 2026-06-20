@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,7 +10,8 @@
     padding: 0;
     height: 100%;
     width: 100%;
-    @apply bg-[#08080a] text-zinc-100 font-sans antialiased selection:bg-indigo-500/30 selection:text-white;
+    font-family: 'Outfit', sans-serif;
+    @apply bg-[#08080a] text-zinc-100 antialiased selection:bg-indigo-500/30 selection:text-white;
   }
 }
 
@@ -21,111 +24,48 @@
       linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   }
 
-  /* Glassmorphism primitives */
+  /* Minimal glass panel layout */
   .glass-panel {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    background: rgba(18, 18, 24, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.03),
-      0 4px 24px -1px rgba(0, 0, 0, 0.4);
+    background: rgba(20, 20, 25, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.03);
   }
 
   .glass-panel-heavy {
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    background: rgba(12, 12, 16, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    box-shadow: 
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
-      0 10px 40px -5px rgba(0, 0, 0, 0.6);
+    background: rgba(10, 10, 12, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
 
   .glass-input {
-    background: rgba(8, 8, 12, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    @apply transition-all duration-200 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 focus:bg-zinc-950/70;
+    background: rgba(5, 5, 8, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    @apply transition-all duration-200 focus:outline-none focus:border-zinc-700 focus:bg-black;
   }
 
   /* Smooth scrollbars */
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
     border-radius: 9999px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(92, 104, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 3px;
+    height: 3px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 9999px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: rgba(92, 104, 255, 0.2);
-  }
-
-  /* Twinkling and shimmers */
-  @keyframes twinkle {
-    0%, 100% { opacity: 0.2; }
-    50% { opacity: 1; }
-  }
-
-  .animate-twinkle {
-    animation: twinkle 3s ease-in-out infinite;
-  }
-
-  @keyframes shimmer-move {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-
-  .animate-shimmer-glow {
-    background: linear-gradient(90deg, #5c68ff, #a5b4fc, #818cf8, #5c68ff);
-    background-size: 300% 300%;
-    animation: shimmer-move 4s ease infinite;
-  }
-
-  /* Floating decorative glows */
-  @keyframes float-glow-1 {
-    0%, 100% { transform: translate(0px, 0px) scale(1); }
-    33% { transform: translate(20px, -30px) scale(1.05); }
-    66% { transform: translate(-15px, 15px) scale(0.98); }
-  }
-
-  @keyframes float-glow-2 {
-    0%, 100% { transform: translate(0px, 0px) scale(1); }
-    50% { transform: translate(-30px, 30px) scale(1.08); }
-  }
-
-  .animate-float-1 {
-    animation: float-glow-1 12s ease-in-out infinite;
-  }
-
-  .animate-float-2 {
-    animation: float-glow-2 15s ease-in-out infinite;
-  }
-
-  /* Pipeline Flow Dash Animation */
-  @keyframes pipeline-flow {
-    to {
-      stroke-dashoffset: -100px;
-    }
-  }
-
-  .animate-pipeline-flow {
-    animation: pipeline-flow 4s linear infinite;
+    background: rgba(255, 255, 255, 0.08);
   }
 }

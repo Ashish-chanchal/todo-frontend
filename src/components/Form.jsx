@@ -81,9 +81,9 @@ function Form({ getTodos, activeTeam = null }) {
 
   return (
     <div className="w-full">
-      <div className="glass-panel rounded-2xl p-5 shadow-lg relative overflow-hidden transition-all duration-300">
-        <h3 className="text-[10px] font-bold flex items-center gap-2 mb-4 text-zinc-400 uppercase tracking-widest select-none">
-          Log Task / <span className="text-zinc-600">Manual Entry</span>
+      <div className="bg-[#0c0c10] border border-zinc-800/80 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-[10px] font-bold flex items-center gap-2 mb-4 text-zinc-500 uppercase tracking-widest select-none font-mono">
+          Task Logging / <span className="text-zinc-600">Manual Entry</span>
         </h3>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -91,7 +91,7 @@ function Form({ getTodos, activeTeam = null }) {
             <input
               type="text"
               placeholder="Task title or backlog subject..."
-              className="glass-input rounded-xl px-4 py-2.5 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none font-medium"
+              className="bg-black/60 border border-zinc-800/80 rounded-xl px-4 py-2.5 text-xs text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-zinc-500 font-medium"
               name="title"
               id="title"
               value={formData.title}
@@ -103,7 +103,7 @@ function Form({ getTodos, activeTeam = null }) {
           <div className="flex flex-col gap-1">
             <textarea
               placeholder="Optional notes, log references, or context links..."
-              className="glass-input rounded-xl px-4 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none min-h-[50px] resize-none leading-relaxed"
+              className="bg-black/60 border border-zinc-800/80 rounded-xl px-4 py-2.5 text-xs text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-zinc-500 min-h-[50px] resize-none leading-relaxed"
               name="description"
               id="description"
               onChange={handleChange}
@@ -111,18 +111,18 @@ function Form({ getTodos, activeTeam = null }) {
             />
           </div>
 
-          <div className={`grid grid-cols-1 ${activeTeam ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4 pt-3 border-t border-white/[0.04]`}>
+          <div className={`grid grid-cols-1 ${activeTeam ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4 pt-3 border-t border-zinc-800/50`}>
             {/* Priority Picker */}
             <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider select-none mb-1">Priority</span>
+              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider select-none mb-1.5">Priority</span>
               <div className="flex gap-1.5">
                 {['low', 'medium', 'high'].map((p) => {
                   const isActive = formData.priority === p;
-                  let colorClass = 'bg-zinc-950/60 text-zinc-400 border-white/[0.04] hover:border-white/10';
+                  let colorClass = 'bg-black/40 text-zinc-500 border-zinc-800/80 hover:border-zinc-700';
                   if (isActive) {
-                    if (p === 'low') colorClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 font-bold';
-                    if (p === 'medium') colorClass = 'bg-amber-500/10 text-amber-400 border-amber-500/30 font-bold';
-                    if (p === 'high') colorClass = 'bg-rose-500/10 text-rose-400 border-rose-500/30 font-bold';
+                    if (p === 'low') colorClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-bold';
+                    if (p === 'medium') colorClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20 font-bold';
+                    if (p === 'high') colorClass = 'bg-rose-500/10 text-rose-400 border-rose-500/20 font-bold';
                   }
                   return (
                     <button
@@ -144,7 +144,7 @@ function Form({ getTodos, activeTeam = null }) {
             {/* Assignee Selection (Only visible in active workspaces) */}
             {activeTeam && (
               <div className="flex flex-col gap-1">
-                <label htmlFor="assigneeId" className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5 select-none mb-1">
+                <label htmlFor="assigneeId" className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5 select-none mb-1.5">
                   Assignee
                 </label>
                 <select
@@ -152,7 +152,7 @@ function Form({ getTodos, activeTeam = null }) {
                   id="assigneeId"
                   value={formData.assigneeId}
                   onChange={handleChange}
-                  className="glass-input rounded-xl px-3 py-1.5 text-xs text-zinc-200 focus:outline-none"
+                  className="bg-black/60 border border-zinc-800/80 rounded-xl px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500"
                 >
                   <option value="">Unassigned</option>
                   {activeTeam.members?.map(m => {
@@ -170,12 +170,12 @@ function Form({ getTodos, activeTeam = null }) {
 
             {/* Due Date */}
             <div className="flex flex-col gap-1">
-              <label htmlFor="dueDate" className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5 select-none mb-1">
-                <Calendar className="w-3.5 h-3.5 text-zinc-600" /> Due Date
+              <label htmlFor="dueDate" className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5 select-none mb-1.5">
+                <Calendar className="w-3.5 h-3.5 text-zinc-500" /> Due Date
               </label>
               <input
                 type="date"
-                className="glass-input rounded-xl px-3 py-1.5 text-xs text-zinc-200 focus:outline-none"
+                className="bg-black/60 border border-zinc-800/80 rounded-xl px-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-500"
                 name="dueDate"
                 id="dueDate"
                 value={formData.dueDate}
@@ -185,13 +185,13 @@ function Form({ getTodos, activeTeam = null }) {
 
             {/* Tags */}
             <div className="flex flex-col gap-1">
-              <label htmlFor="tags" className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5 select-none mb-1">
-                <Tag className="w-3.5 h-3.5 text-zinc-600" /> Label Tags
+              <label htmlFor="tags" className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5 select-none mb-1.5">
+                <Tag className="w-3.5 h-3.5 text-zinc-500" /> Label Tags
               </label>
               <input
                 type="text"
                 placeholder="work, feature, personal"
-                className="glass-input rounded-xl px-3 py-1.5 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none"
+                className="bg-black/60 border border-zinc-800/80 rounded-xl px-3 py-1.5 text-xs text-zinc-200 placeholder:text-zinc-700 focus:outline-none focus:border-zinc-500"
                 name="tags"
                 id="tags"
                 value={formData.tags}
@@ -204,7 +204,7 @@ function Form({ getTodos, activeTeam = null }) {
             <button
               type="submit"
               disabled={loading || !formData.title.trim()}
-              className="bg-indigo-500 hover:bg-indigo-600 text-white rounded-full px-5 py-2 text-xs font-bold transition-all duration-150 active:scale-95 disabled:opacity-40 disabled:hover:scale-100 disabled:cursor-not-allowed"
+              className="bg-white hover:bg-zinc-200 text-black rounded-full px-5 py-2 text-xs font-bold transition-all duration-150 active:scale-95 disabled:opacity-40 disabled:hover:scale-100 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : 'Create Task'}
             </button>
@@ -212,7 +212,7 @@ function Form({ getTodos, activeTeam = null }) {
         </form>
 
         {message && (
-          <p className="mt-3 font-semibold text-center text-xs text-indigo-400 font-mono animate-pulse">
+          <p className="mt-3 font-semibold text-center text-xs text-zinc-400 font-mono animate-pulse">
             {message}
           </p>
         )}

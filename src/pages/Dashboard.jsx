@@ -611,12 +611,8 @@ function Dashboard() {
 
   return (
     <div className="h-screen w-screen bg-[#08080a] text-zinc-100 flex overflow-hidden font-sans select-none antialiased relative">
-      {/* Background patterns */}
-      <div className="absolute top-[10%] right-[10%] w-[35rem] h-[35rem] bg-indigo-500/5 rounded-full blur-[140px] pointer-events-none animate-float-2 z-0" />
-      <div className="absolute bottom-[-10%] left-[10%] w-[30rem] h-[30rem] bg-violet-600/5 rounded-full blur-[130px] pointer-events-none animate-float-1 z-0" />
-
       {/* Docked Left Sidebar */}
-      <aside className="w-64 flex-shrink-0 border-r border-white/[0.05] bg-[#0c0c10]/80 backdrop-blur-xl flex flex-col justify-between h-full z-10">
+      <aside className="w-64 flex-shrink-0 border-r border-white/[0.04] bg-[#0c0c10]/40 backdrop-blur-xl flex flex-col justify-between h-full z-10">
         
         {/* Top Header Logo */}
         <div className="flex items-center gap-2.5 px-6 py-5 border-b border-white/[0.05]">
@@ -636,19 +632,19 @@ function Dashboard() {
             <button
               onClick={() => navigate('/dashboard/chat')}
               className={cn(
-                "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all duration-150 relative overflow-hidden border border-transparent",
-                activeTab === 'chat' ? 'text-white font-semibold' : 'text-zinc-400 hover:text-white hover:bg-white/[0.02]'
+                "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all duration-300 relative overflow-hidden border border-transparent",
+                activeTab === 'chat' ? 'text-white font-semibold shadow-[0_0_15px_rgba(99,102,241,0.1)]' : 'text-zinc-400 hover:text-white hover:bg-white/[0.02]'
               )}
             >
               {activeTab === 'chat' && (
                 <motion.div
                   layoutId="activeTabIndicator"
-                  className="absolute inset-0 bg-white/[0.03] border border-white/[0.05] rounded-xl -z-10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
+                  className="absolute inset-0 bg-white/[0.04] border border-white/[0.05] rounded-xl -z-10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
               <div className="flex items-center gap-2.5">
-                <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
+                <MessageSquare className="w-3.5 h-3.5 text-[#818cf8]" />
                 <span>AI Assistant</span>
               </div>
               <span className="text-[8px] bg-indigo-500/10 text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-500/20 font-bold uppercase tracking-wider">Live</span>

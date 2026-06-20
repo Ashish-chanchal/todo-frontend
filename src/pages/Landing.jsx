@@ -37,11 +37,7 @@ function Landing({ onGetStarted }) {
   return (
     <div className="min-h-screen bg-[#08080a] text-zinc-100 font-sans antialiased overflow-x-hidden relative">
       {/* Background Grid with Radial Fade */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-30 pointer-events-none" />
-
-      {/* Decorative subtle glows */}
-      <div className="absolute top-[-10%] left-[20%] w-[35rem] h-[35rem] bg-indigo-500/5 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-[10%] right-[10%] w-[35rem] h-[35rem] bg-violet-500/5 rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
 
       {/* Header */}
       <header className="max-w-6xl mx-auto px-6 py-6 flex justify-between items-center relative z-20">
@@ -63,27 +59,27 @@ function Landing({ onGetStarted }) {
 
       {/* Hero Section */}
       <section className="max-w-4xl mx-auto text-center px-6 pt-24 pb-20 relative z-20">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/5 border border-indigo-500/10 text-[9px] font-bold tracking-widest text-[#8f95ff] mb-6 uppercase">
-          <Sparkles className="w-3 h-3" /> NATIVE MODEL CONTEXT PROTOCOL WORKSPACE
+        <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-500/5 border border-indigo-500/10 text-[9px] font-bold tracking-widest text-[#8f95ff] mb-6 uppercase shadow-[0_0_15px_rgba(99,102,241,0.05)]">
+          <Sparkles className="w-3 h-3 text-[#8f95ff]" /> NATIVE MODEL CONTEXT PROTOCOL WORKSPACE
         </div>
 
-        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-400 leading-[1.1] mb-6">
+        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-500 leading-[1.1] mb-6">
           The task manager <br />
           your AI already knows.
         </h1>
 
-        <p className="text-zinc-400 text-sm md:text-base max-w-xl mx-auto leading-relaxed mb-10">
+        <p className="text-zinc-400 text-sm md:text-base max-w-xl mx-auto leading-relaxed mb-10 font-medium">
           TodoAI is built on MCP, letting external agents inspect and update tasks natively. Integrated with Slack commitment capture, calendar feeds, and team widgets.
         </p>
 
         <div className="flex justify-center gap-4">
           <button
             onClick={onGetStarted}
-            className="relative inline-flex h-11 overflow-hidden rounded-full p-[1px] focus:outline-none active:scale-95 transition-all shadow-md"
+            className="relative inline-flex h-11 overflow-hidden rounded-full p-[1px] focus:outline-none active:scale-95 transition-all shadow-lg"
           >
             <span className="absolute inset-0 animate-shimmer-glow rounded-full" />
             <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-[#08080a] px-6 text-xs font-bold text-white backdrop-blur-3xl hover:bg-[#08080a]/90 transition-all gap-1.5">
-              Launch Console <ArrowRight className="w-3.5 h-3.5" />
+              Launch Console <ArrowRight className="w-3.5 h-3.5 text-[#8f95ff]" />
             </span>
           </button>
         </div>
@@ -113,11 +109,11 @@ function Landing({ onGetStarted }) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1: Chat Assistant */}
-          <div className="md:col-span-2 glass-panel rounded-3xl p-6 relative overflow-hidden transition-all duration-300 group">
+          <div className="md:col-span-2 glass-panel rounded-3xl p-6 relative overflow-hidden transition-all duration-300 group hover:border-[#818cf8]/20 shadow-[0_4px_30px_rgba(0,0,0,0.4)]">
             <div className="flex flex-col justify-between h-full min-h-[260px]">
               <div>
-                <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-4">
-                  <MessageSquare className="w-4 h-4 text-indigo-400" />
+                <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center mb-4">
+                  <MessageSquare className="w-4 h-4 text-[#818cf8]" />
                 </div>
                 <h3 className="font-bold text-md text-white mb-2">AI Chat Console</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed max-w-md">
@@ -126,7 +122,7 @@ function Landing({ onGetStarted }) {
               </div>
 
               {/* Console Mockup */}
-              <div className="bg-zinc-950 border border-white/[0.04] rounded-2xl p-4 font-mono text-[9px] text-zinc-500 mt-6">
+              <div className="bg-zinc-950/80 border border-white/[0.05] rounded-2xl p-4 font-mono text-[9px] text-zinc-500 mt-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
                 <div className="flex items-center gap-1.5 mb-2 border-b border-white/[0.03] pb-1.5">
                   <span className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
                   <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
