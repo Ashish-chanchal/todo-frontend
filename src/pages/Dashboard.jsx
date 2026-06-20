@@ -7,6 +7,7 @@ import Form from '../components/Form';
 import TodosList from '../components/TodosLIst';
 import ChatFeed from '../components/ChatFeed';
 import NLInput from '../components/NLInput';
+import TaskFormCard from '../components/TaskFormCard';
 import ActivityTimeline from '../components/ActivityTimeline';
 import ApprovalGate from '../components/ApprovalGate';
 import CommitmentCard from '../components/CommitmentCard';
@@ -339,15 +340,20 @@ function Dashboard() {
 
   // Interactive form submission from chat
   const handleFormSubmit = async (formValues, msg) => {
+    const isMeeting = formValues.isMeeting === 'true' || formValues.isMeeting === true;
+    const invitees = Array.isArray(formValues.invitees) ? formValues.invitees : [];
+    
     setChatMessages(prev => [...prev, {
       sender: 'user',
-      text: `Creating task: ${formValues.title}`,
+      text: `Creating ${isMeeting ? 'meeting' : 'task'}: ${formValues.title}`,
     }]);
     setChatStreaming(true);
 
     try {
       const tags = formValues.tags
-        ? formValues.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean).slice(0, 3)
+        ? typeof formValues.tags === 'string'
+          ? formValues.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean).slice(0, 3)
+          : formValues.tags
         : [];
 
       const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/todo`, {
@@ -363,6 +369,8 @@ function Dashboard() {
           dueDate: formValues.dueDate || null,
           tags,
           teamId: activeTeam?._id || null,
+          isMeeting,
+          invitees,
         })
       });
 

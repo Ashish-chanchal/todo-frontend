@@ -34,6 +34,10 @@ function Settings({ onBack, activeTeam = null, teams = [], onRefreshTeams }) {
   const myRole = myMemberObj ? myMemberObj.role : 'viewer';
   const canManage = myRole === 'owner' || myRole === 'admin';
 
+  // Integration states
+  const [integrations, setIntegrations] = useState({ slack: false, google: false });
+  const [integrationMsg, setIntegrationMsg] = useState('');
+
   const fetchKeys = async () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/api-keys`, {
@@ -47,6 +51,22 @@ function Settings({ onBack, activeTeam = null, teams = [], onRefreshTeams }) {
       }
     } catch (err) {
       console.error('Failed to fetch API keys:', err);
+    }
+  };
+
+  const fetchIntegrations = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/integrations/status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setIntegrations(data.integrations || { slack: false, google: false });
+      }
+    } catch (err) {
+      console.error('Failed to fetch integrations:', err);
     }
   };
 
@@ -67,9 +87,41 @@ function Settings({ onBack, activeTeam = null, teams = [], onRefreshTeams }) {
     }
   };
 
+  const handleToggleIntegration = async (provider, currentStatus) => {
+    setIntegrationMsg('');
+    
+    // For Google connect, redirect user to the OAuth consent page instead of a simple POST call
+    if (provider === 'google' && !currentStatus) {
+      window.location.href = `${import.meta.env.VITE_API_BACKEND_URI}/integrations/google/auth?token=${token}`;
+      return;
+    }
+
+    const endpoint = currentStatus ? 'disconnect' : 'connect';
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BACKEND_URI}/integrations/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ provider })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setIntegrationMsg(`✨ ${data.msg}`);
+        fetchIntegrations();
+      } else {
+        setIntegrationMsg(`❌ ${data.msg}`);
+      }
+    } catch (err) {
+      setIntegrationMsg('❌ Integration toggle failed.');
+    }
+  };
+
   useEffect(() => {
     fetchKeys();
     fetchBillingStatus();
+    fetchIntegrations();
   }, [token]);
 
   const handleGenerateKey = async (e) => {
@@ -366,6 +418,56 @@ function Settings({ onBack, activeTeam = null, teams = [], onRefreshTeams }) {
               <div>
                 <span className="text-[#6b6b80] block">Account Role</span>
                 <span className="text-indigo-400 capitalize font-semibold mt-0.5 block">{user?.role}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Integrations (Slack / Google Calendar) */}
+          <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 shadow-2xl">
+            <h2 className="text-sm font-semibold mb-4 text-[#ededef] uppercase tracking-wider">App Integrations</h2>
+            <p className="text-xs text-[#88889c] mb-6 leading-relaxed">
+              Connect external services to sync your tasks automatically or capture commitments from Slack and Email feeds.
+            </p>
+            {integrationMsg && (
+              <div className="mb-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 text-xs text-indigo-400 font-semibold">
+                {integrationMsg}
+              </div>
+            )}
+            <div className="space-y-4">
+              {/* Slack Integration */}
+              <div className="flex items-center justify-between border-b border-white/[0.03] pb-4">
+                <div>
+                  <span className="font-semibold text-xs text-[#ededef] block">Slack Integration</span>
+                  <span className="text-[10px] text-[#6b6b80] block mt-0.5">Scrapes task commitments from active Slack channels</span>
+                </div>
+                <button
+                  onClick={() => handleToggleIntegration('slack', integrations.slack)}
+                  className={`text-[10px] px-3.5 py-1.5 rounded-full font-bold uppercase tracking-wider transition-all duration-150 ${
+                    integrations.slack
+                      ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20'
+                      : 'bg-indigo-500 hover:bg-indigo-600 text-white shadow-md shadow-indigo-500/15'
+                  }`}
+                >
+                  {integrations.slack ? 'Disconnect' : 'Connect'}
+                </button>
+              </div>
+
+              {/* Google Calendar Integration */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-semibold text-xs text-[#ededef] block">Google Calendar</span>
+                  <span className="text-[10px] text-[#6b6b80] block mt-0.5">Pushes active tasks with due dates to your calendar</span>
+                </div>
+                <button
+                  onClick={() => handleToggleIntegration('google', integrations.google)}
+                  className={`text-[10px] px-3.5 py-1.5 rounded-full font-bold uppercase tracking-wider transition-all duration-150 ${
+                    integrations.google
+                      ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20'
+                      : 'bg-indigo-500 hover:bg-indigo-600 text-white shadow-md shadow-indigo-500/15'
+                  }`}
+                >
+                  {integrations.google ? 'Disconnect' : 'Connect'}
+                </button>
               </div>
             </div>
           </div>

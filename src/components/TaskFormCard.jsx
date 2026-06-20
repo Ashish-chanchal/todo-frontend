@@ -4,7 +4,9 @@ import { Send, X } from 'lucide-react';
 function TaskFormCard({ form, onSubmit, onCancel }) {
   const [values, setValues] = useState(() => {
     const initial = {};
-    (form.fields || []).forEach(f => { initial[f.name] = f.value || '' });
+    (form.fields || []).forEach(f => {
+      initial[f.name] = f.value !== undefined ? f.value : (f.type === 'multiselect' ? [] : '');
+    });
     return initial;
   });
   const [errors, setErrors] = useState({});
@@ -17,8 +19,15 @@ function TaskFormCard({ form, onSubmit, onCancel }) {
     e.preventDefault();
     const newErrors = {};
     (form.fields || []).forEach(f => {
-      if (f.required && !values[f.name]?.trim()) {
-        newErrors[f.name] = `${f.label || f.name} is required`;
+      if (f.required) {
+        const val = values[f.name];
+        if (Array.isArray(val)) {
+          if (val.length === 0) {
+            newErrors[f.name] = `${f.label || f.name} requires at least one selection`;
+          }
+        } else if (!val?.trim()) {
+          newErrors[f.name] = `${f.label || f.name} is required`;
+        }
       }
     });
     if (Object.keys(newErrors).length > 0) {
@@ -41,6 +50,52 @@ function TaskFormCard({ form, onSubmit, onCancel }) {
             ))}
           </select>
         );
+      case 'multiselect': {
+        const selectedList = Array.isArray(values[field.name]) ? values[field.name] : [];
+        const handleCheckChange = (optValue, checked) => {
+          let newList;
+          if (checked) {
+            newList = [...selectedList, optValue];
+          } else {
+            newList = selectedList.filter(v => v !== optValue);
+          }
+          handleChange(field.name, newList);
+        };
+        const handleSelectAll = () => {
+          const allVals = (field.options || []).map(opt => opt.value);
+          handleChange(field.name, allVals);
+        };
+        const handleClearAll = () => {
+          handleChange(field.name, []);
+        };
+        return (
+          <div className="space-y-1.5 border border-white/[0.06] bg-[#050507] rounded-lg p-2 max-h-36 overflow-y-auto custom-scrollbar">
+            <div className="flex gap-2 justify-end mb-1 border-b border-white/[0.04] pb-1">
+              <button type="button" onClick={handleSelectAll} className="text-[9px] text-indigo-400 hover:text-indigo-300 font-bold">Select All</button>
+              <span className="text-[9px] text-zinc-600">|</span>
+              <button type="button" onClick={handleClearAll} className="text-[9px] text-zinc-500 hover:text-zinc-400 font-bold">Clear</button>
+            </div>
+            {(field.options || []).length === 0 ? (
+              <p className="text-[10px] text-zinc-500 italic">No team members found to invite.</p>
+            ) : (
+              (field.options || []).map(opt => {
+                const isChecked = selectedList.includes(opt.value);
+                return (
+                  <label key={opt.value} className="flex items-center gap-2 text-[10px] text-[#ededef] cursor-pointer select-none py-0.5 hover:bg-white/[0.02] px-1 rounded">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={e => handleCheckChange(opt.value, e.target.checked)}
+                      className="rounded border-zinc-700 bg-zinc-900 text-indigo-600 focus:ring-0 focus:ring-offset-0 w-3 h-3 cursor-pointer"
+                    />
+                    <span>{opt.label}</span>
+                  </label>
+                );
+              })
+            )}
+          </div>
+        );
+      }
       case 'date':
         return <input type="date" value={values[field.name] || ''} onChange={e => handleChange(field.name, e.target.value)} className={base} />;
       case 'textarea':
